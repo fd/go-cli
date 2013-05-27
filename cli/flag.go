@@ -135,6 +135,8 @@ func (flag *Flag) handle_value(ctx *flag_handler_context, val string) (bool, err
 		return false, fmt.Errorf("flag: `%s` unsupported value type %s", flag.value.Type())
 
 	}
+
+	panic("not reached")
 }
 
 func (flag *Flag) handle_flag(ctx *flag_handler_context) (bool, error) {
@@ -155,6 +157,8 @@ func (flag *Flag) handle_flag(ctx *flag_handler_context) (bool, error) {
 		return false, fmt.Errorf("flag: `%s` unsupported value type %s", flag.value.Type())
 
 	}
+
+	panic("not reached")
 }
 
 func (f *Flag) terminal_type() reflect.Type {
