@@ -13,7 +13,7 @@ func TestFlag(t *testing.T) {
 	)
 
 	value = ""
-	env = NewEnvironment([]string{"hello", "--foo", "--bar", "qux", "--baz"})
+	env = NewEnvironment([]string{"hello", "--foo", "--bar", "qux", "--baz"}, nil)
 	err = flag.Execute(env)
 	if value != "qux" {
 		t.Fatalf("expected value to be `qux` but it was `%s`", value)
@@ -24,7 +24,7 @@ func TestFlag(t *testing.T) {
 	t.Logf("args: %+v", env.Args())
 
 	value = ""
-	env = NewEnvironment([]string{"hello", "--foo", "-b", "qux", "--baz"})
+	env = NewEnvironment([]string{"hello", "--foo", "-b", "qux", "--baz"}, nil)
 	err = flag.Execute(env)
 	if value != "qux" {
 		t.Fatalf("expected value to be `qux` but it was `%s`", value)
@@ -35,7 +35,7 @@ func TestFlag(t *testing.T) {
 	t.Logf("args: %+v", env.Args())
 
 	value = ""
-	env = NewEnvironment([]string{"hello", "--foo", "--bar=qux", "--baz"})
+	env = NewEnvironment([]string{"hello", "--foo", "--bar=qux", "--baz"}, nil)
 	err = flag.Execute(env)
 	if value != "qux" {
 		t.Fatalf("expected value to be `qux` but it was `%s`", value)
@@ -46,7 +46,7 @@ func TestFlag(t *testing.T) {
 	t.Logf("args: %+v", env.Args())
 
 	value = ""
-	env = NewEnvironment([]string{"hello", "--foo", "--bar"})
+	env = NewEnvironment([]string{"hello", "--foo", "--bar"}, nil)
 	err = flag.Execute(env)
 	if value != "" {
 		t.Fatalf("expected value to be `` but it was `%s`", value)

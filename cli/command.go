@@ -7,10 +7,11 @@ import (
 )
 
 type Command struct {
-	names   []string
-	flags   MultiHandler
-	args    MultiHandler
-	handler Handler
+	names    []string
+	env_vars MultiHandler
+	flags    MultiHandler
+	args     MultiHandler
+	handler  Handler
 }
 
 func NewCommand(names ...string) *Command {
@@ -54,6 +55,11 @@ func (c *Command) BindValue(v reflect.Value) *Command {
 			continue
 		}
 
+		if tag := f.Tag.Get("env"); tag != "" {
+			names := strings.Split(tag, ",")
+			c.Var(names...).BindValue(fv)
+		}
+
 		if tag := f.Tag.Get("flag"); tag != "" {
 			names := strings.Split(tag, ",")
 			c.Flag(names...).BindValue(fv)
@@ -76,6 +82,12 @@ func (c *Command) Handle(h Handler) *Command {
 func (c *Command) HandleFunc(f FuncHandler) *Command {
 	c.handler = f
 	return c
+}
+
+func (c *Command) Var(names ...string) *EnvVariable {
+	f := NewEnvVariable(names...)
+	c.env_vars = append(c.env_vars, f)
+	return f
 }
 
 func (c *Command) Flag(names ...string) *Flag {
@@ -107,7 +119,12 @@ func (c *Command) Execute(env *Environment) error {
 
 	args.Skip(1)
 
-	err := c.flags.Execute(env)
+	err := c.env_vars.Execute(env)
+	if err != nil {
+		return err
+	}
+
+	err = c.flags.Execute(env)
 	if err != nil {
 		return err
 	}
@@ -115,6 +132,10 @@ func (c *Command) Execute(env *Environment) error {
 	err = c.args.Execute(env)
 	if err != nil {
 		return err
+	}
+
+	if env.Args().Len() != 0 {
+		return fmt.Errorf("unexpected arguments: %s", env.Args())
 	}
 
 	if c.handler == nil {

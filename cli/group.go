@@ -7,6 +7,7 @@ import (
 
 type Group struct {
 	names    []string
+	env_vars MultiHandler
 	flags    MultiHandler
 	commands []NamedHandler
 }
@@ -43,6 +44,11 @@ func (g *Group) BindValue(v reflect.Value) *Group {
 			continue
 		}
 
+		if tag := f.Tag.Get("env"); tag != "" {
+			names := strings.Split(tag, ",")
+			g.Var(names...).BindValue(fv)
+		}
+
 		if tag := f.Tag.Get("flag"); tag != "" {
 			names := strings.Split(tag, ",")
 			g.Flag(names...).BindValue(fv)
@@ -64,6 +70,12 @@ func (g *Group) BindValue(v reflect.Value) *Group {
 
 func (g *Group) Names() []string {
 	return g.names
+}
+
+func (g *Group) Var(names ...string) *EnvVariable {
+	e := NewEnvVariable(names...)
+	g.env_vars = append(g.env_vars, e)
+	return e
 }
 
 func (g *Group) Flag(names ...string) *Flag {
@@ -107,7 +119,12 @@ func (g *Group) Execute(env *Environment) error {
 
 	args.Skip(1)
 
-	err := g.flags.Execute(env)
+	err := g.env_vars.Execute(env)
+	if err != nil {
+		return err
+	}
+
+	err = g.flags.Execute(env)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ func TestCommand(t *testing.T) {
 	)
 
 	verbose, person = false, ""
-	env = NewEnvironment([]string{"say", "-v", "--hello", "Anaïs"})
+	env = NewEnvironment([]string{"say", "-v", "--hello", "Anaïs"}, nil)
 	err = cmd.Execute(env)
 	if !verbose {
 		t.Fatalf("expected verbose to be `true` but it was `%v`", verbose)
@@ -36,8 +36,22 @@ func TestCommand(t *testing.T) {
 func TestCommandBind(t *testing.T) {
 	var (
 		c struct {
-			Verbose bool   `flag:"-v,--verbose"`
-			Person  string `flag:"-h,--hello"`
+			Verbose  bool   `flag:"-v,--verbose"`
+			Greeting string `env:"GREETING"`
+			Person   string `flag:"-h,--hello"`
+
+			Manual `
+        Usage:   echo --hello John
+        Summary: A test command
+
+        .Verbose:  A Short description of the --verbose option
+        .Greeting:
+          A Multi line description of
+          the GREETING variable.
+          This text is automatically rewrapped.
+
+        This is a test command.
+      `
 		}
 		cmd = NewCommand("echo", "say").Bind(&c)
 
@@ -45,13 +59,19 @@ func TestCommandBind(t *testing.T) {
 		err error
 	)
 
-	env = NewEnvironment([]string{"say", "-v", "--hello", "Anaïs"})
+	env = NewEnvironment(
+		[]string{"say", "-v", "--hello", "Anaïs"},
+		[]string{"GREETING=Hi"},
+	)
 	err = cmd.Execute(env)
 	if err != nil {
 		t.Fatalf("expected error to be nil: %s", err)
 	}
 	if !c.Verbose {
 		t.Fatalf("expected verbose to be `true` but it was `%v`", c.Verbose)
+	}
+	if c.Greeting != "Hi" {
+		t.Fatalf("expected greeting to be `Hi` but it was `%s`", c.Greeting)
 	}
 	if c.Person != "Anaïs" {
 		t.Fatalf("expected person to be `Anaïs` but it was `%s`", c.Person)

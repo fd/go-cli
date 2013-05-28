@@ -1,5 +1,9 @@
 package cli
 
+import (
+	"strings"
+)
+
 type (
 	Arguments        []string
 	ArgumentConsumer func(s string) (bool, error)
@@ -45,4 +49,9 @@ func (a *Arguments) Skip(n int) {
 	s := *a
 	s = s[n:]
 	*a = s
+}
+
+func (a *Arguments) String() string {
+	s := *a
+	return strings.Join(s, " ")
 }
