@@ -47,10 +47,14 @@ func TestCommandBind(t *testing.T) {
         .Verbose:  A Short description of the --verbose option
         .Greeting:
           A Multi line description of
-          the GREETING variable.
+            the GREETING variable.
           This text is automatically rewrapped.
 
-        This is a test command.
+        Description:
+          This is a test command.
+
+          With a multi line and multi
+          paragraph description section.
       `
 		}
 		cmd = NewCommand("echo", "say").Bind(&c)

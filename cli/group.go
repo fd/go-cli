@@ -36,9 +36,12 @@ func (g *Group) BindValue(v reflect.Value) *Group {
 		panic("Expected a struct when binding a group")
 	}
 
+	handle_map := map[string][]string{}
+
 	for i, j := 0, rt.NumField(); i < j; i++ {
 		f := rt.Field(i)
 		fv := rv.Field(i)
+		handles := []string{}
 
 		if f.PkgPath != "" {
 			continue
@@ -46,22 +49,34 @@ func (g *Group) BindValue(v reflect.Value) *Group {
 
 		if tag := f.Tag.Get("env"); tag != "" {
 			names := strings.Split(tag, ",")
+			handles = append(handles, names...)
 			g.Var(names...).BindValue(fv)
 		}
 
 		if tag := f.Tag.Get("flag"); tag != "" {
 			names := strings.Split(tag, ",")
+			handles = append(handles, names...)
 			g.Flag(names...).BindValue(fv)
 		}
 
 		if tag := f.Tag.Get("cmd"); tag != "" {
 			names := strings.Split(tag, ",")
+			handles = append(handles, names...)
 			g.Command(names...).BindValue(fv)
 		}
 
 		if tag := f.Tag.Get("grp"); tag != "" {
 			names := strings.Split(tag, ",")
+			handles = append(handles, names...)
 			g.Group(names...).BindValue(fv)
+		}
+
+		handle_map[f.Name] = handles
+
+		if f.Anonymous && f.Type == reflect.TypeOf(Manual{}) {
+			m := Manual{}
+			m.Parse(string(f.Tag), handle_map)
+			fv.Set(reflect.ValueOf(m))
 		}
 	}
 

@@ -47,9 +47,12 @@ func (c *Command) BindValue(v reflect.Value) *Command {
 		panic("Expected a struct when binding a command")
 	}
 
+	handle_map := map[string][]string{}
+
 	for i, j := 0, rt.NumField(); i < j; i++ {
 		f := rt.Field(i)
 		fv := rv.Field(i)
+		handles := []string{}
 
 		if f.PkgPath != "" {
 			continue
@@ -57,18 +60,29 @@ func (c *Command) BindValue(v reflect.Value) *Command {
 
 		if tag := f.Tag.Get("env"); tag != "" {
 			names := strings.Split(tag, ",")
+			handles = append(handles, names...)
 			c.Var(names...).BindValue(fv)
 		}
 
 		if tag := f.Tag.Get("flag"); tag != "" {
 			names := strings.Split(tag, ",")
+			handles = append(handles, names...)
 			c.Flag(names...).BindValue(fv)
 		}
 
 		// if tag := f.Tag.Get("arg"); tag != "" {
 		//   names := strings.Split(tag, ",")
+		//   handles = append(handles, names)
 		//   c.Arg().Bind(fv)
 		// }
+
+		handle_map[f.Name] = handles
+
+		if f.Anonymous && f.Type == reflect.TypeOf(Manual{}) {
+			m := Manual{}
+			m.Parse(string(f.Tag), handle_map)
+			fv.Set(reflect.ValueOf(m))
+		}
 	}
 
 	return c
