@@ -18,7 +18,7 @@ Example command:
 */
 
 type Command interface {
-	Execute() error
+	Main() error
 }
 
 type Arg0 string

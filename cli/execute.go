@@ -94,7 +94,7 @@ func execute_command(env *environment_t, exec *executable_t, pv reflect.Value) e
 		return fmt.Errorf("unexpected arguments: %s", strings.Join(env.args, " "))
 	}
 
-	return pv.Interface().(Command).Execute()
+	return pv.Interface().(Command).Main()
 }
 
 func execute_group(env *environment_t, exec *executable_t, pv reflect.Value) error {

@@ -74,21 +74,21 @@ type AppDestroy struct {
   `
 }
 
-func (cmd *AppList) Execute() error {
+func (cmd *AppList) Main() error {
 	if cmd.Help {
 		fmt.Printf("CMD: %+v\n", cmd)
 	}
 	return nil
 }
 
-func (cmd *AppCreate) Execute() error {
+func (cmd *AppCreate) Main() error {
 	if cmd.Help {
 		cmd.Manual.Open()
 	}
 	return nil
 }
 
-func (cmd *AppDestroy) Execute() error {
+func (cmd *AppDestroy) Main() error {
 	return nil
 }
 
