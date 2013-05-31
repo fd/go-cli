@@ -6,30 +6,24 @@ import (
 	"unicode"
 )
 
-type Manual struct {
-	Usage      string
-	Summary    string
-	Paragraphs []Paragraph
-}
-
-type Paragraph struct {
-	Header string
-	Body   string
-}
-
-func (m *Manual) Parse(source string, handles map[string][]string) {
+func (m *Manual) parse(exec *executable_t) {
 	var (
+		source = string(exec.Manual.Tag)
 		indent = determine_indent(source)
 		lines  = strings.Split(source, "\n")
 	)
 
 	remove_indent(lines, indent)
+	parse_sections(lines, exec)
+}
 
+func (m *Manual) parse_sections(lines []string, exec *executable_t) {
 	var (
 		in_section   bool
 		section_name string
 		section_body string
 	)
+
 	for _, line := range lines {
 		name, body, empty := parse_line(line)
 
@@ -42,7 +36,7 @@ func (m *Manual) Parse(source string, handles map[string][]string) {
 
 		if name != "" {
 			if in_section {
-				m.parse_section(section_name, section_body, handles)
+				m.parse_section(section_name, section_body, exec)
 				section_name = ""
 				section_body = ""
 			}
@@ -55,11 +49,11 @@ func (m *Manual) Parse(source string, handles map[string][]string) {
 	}
 
 	if in_section {
-		m.parse_section(section_name, section_body, handles)
+		m.parse_section(section_name, section_body, exec)
 	}
 }
 
-func (m *Manual) parse_section(name, body string, handles map[string][]string) {
+func (m *Manual) parse_section(name, body string, exec *executable_t) {
 	{
 		var (
 			indent = determine_indent(body)
@@ -73,10 +67,10 @@ func (m *Manual) parse_section(name, body string, handles map[string][]string) {
 	switch name {
 
 	case "Usage":
-		m.Usage = body
+		m.usage = body
 
 	case "Summary":
-		m.Summary = body
+		m.summary = body
 
 	default:
 
@@ -84,17 +78,17 @@ func (m *Manual) parse_section(name, body string, handles map[string][]string) {
 			m.parse_option(name[1:], body, handles)
 
 		} else {
-			p := Paragraph{Header: name, Body: body}
-			m.Paragraphs = append(m.Paragraphs, p)
+			p := paragraph_t{Header: name, Body: body}
+			m.paragraphs = append(m.paragraphs, p)
 		}
 
 	}
 }
 
-func (m *Manual) parse_option(name, body string, handles map[string][]string) {
-	p := Paragraph{Body: body}
+func (m *Manual) parse_option(name, body string, exec *executable_t) {
+	p := paragraph_t{Body: body}
 	p.Header = strings.Join(handles[name], " ")
-	m.Paragraphs = append(m.Paragraphs, p)
+	m.paragraphs = append(m.paragraphs, p)
 }
 
 func parse_line(line string) (section, body string, empty bool) {

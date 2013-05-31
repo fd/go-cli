@@ -4,22 +4,13 @@ import (
 	"strings"
 )
 
-type Environment struct {
-	args Arguments
+type environment_t struct {
+	args []string
 	env  map[string]string
 }
 
-func NewEnvironment(args []string, env []string) *Environment {
-	return &Environment{args: Arguments(args), env: parse_env(env)}
-}
-
-func (e *Environment) Args() *Arguments {
-	return &e.args
-}
-
-func (e *Environment) Var(key string) (string, bool) {
-	val, p := e.env[key]
-	return val, p
+func new_environment(args []string, env []string) *environment_t {
+	return &environment_t{args: args, env: parse_env(env)}
 }
 
 func parse_env(in []string) map[string]string {
