@@ -27,12 +27,14 @@ type Root struct {
 }
 
 type Manual struct {
-	usage      string
-	summary    string
-	paragraphs []paragraph_t
+	exec     *executable_t
+	usage    string
+	summary  string
+	options  map[string]section_t
+	sections []section_t
 }
 
-type paragraph_t struct {
+type section_t struct {
 	Header string
 	Body   string
 }

@@ -13,11 +13,14 @@ func (m *Manual) parse(exec *executable_t) {
 		lines  = strings.Split(source, "\n")
 	)
 
+	m.exec = exec
+	m.options = make(map[string]section_t, 20)
+
 	remove_indent(lines, indent)
-	parse_sections(lines, exec)
+	m.parse_sections(lines)
 }
 
-func (m *Manual) parse_sections(lines []string, exec *executable_t) {
+func (m *Manual) parse_sections(lines []string) {
 	var (
 		in_section   bool
 		section_name string
@@ -36,7 +39,7 @@ func (m *Manual) parse_sections(lines []string, exec *executable_t) {
 
 		if name != "" {
 			if in_section {
-				m.parse_section(section_name, section_body, exec)
+				m.parse_section(section_name, section_body)
 				section_name = ""
 				section_body = ""
 			}
@@ -49,11 +52,11 @@ func (m *Manual) parse_sections(lines []string, exec *executable_t) {
 	}
 
 	if in_section {
-		m.parse_section(section_name, section_body, exec)
+		m.parse_section(section_name, section_body)
 	}
 }
 
-func (m *Manual) parse_section(name, body string, exec *executable_t) {
+func (m *Manual) parse_section(name, body string) {
 	{
 		var (
 			indent = determine_indent(body)
@@ -75,20 +78,15 @@ func (m *Manual) parse_section(name, body string, exec *executable_t) {
 	default:
 
 		if strings.HasPrefix(name, ".") {
-			m.parse_option(name[1:], body, handles)
+			p := section_t{Header: name, Body: body}
+			m.options[name[1:]] = p
 
 		} else {
-			p := paragraph_t{Header: name, Body: body}
-			m.paragraphs = append(m.paragraphs, p)
+			p := section_t{Header: name, Body: body}
+			m.sections = append(m.sections, p)
 		}
 
 	}
-}
-
-func (m *Manual) parse_option(name, body string, exec *executable_t) {
-	p := paragraph_t{Body: body}
-	p.Header = strings.Join(handles[name], " ")
-	m.paragraphs = append(m.paragraphs, p)
 }
 
 func parse_line(line string) (section, body string, empty bool) {

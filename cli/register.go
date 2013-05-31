@@ -7,7 +7,7 @@ import (
 )
 
 var executables = map[reflect.Type]*executable_t{
-	typ_Root: &executable_t{
+	typ_Root: {
 		Type:    typ_Root,
 		IsGroup: true,
 	},

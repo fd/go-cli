@@ -51,12 +51,14 @@ type AppList struct {
 type AppCreate struct {
 	App
 	cli.Arg0 `name:"create"`
+	Region   string `flag:"--region" env:"REGION"`
 	Name     string `arg`
 
 	cli.Manual `
     Usage:   example app create NAME
     Summary: Create an application.
-    .Name:   The name of the application
+    .Region: The region to create the app in
+    .Name:   The *name* of the application
   `
 }
 
@@ -68,7 +70,7 @@ type AppDestroy struct {
 	cli.Manual `
     Usage:   example app destroy NAME
     Summary: Destroy an application.
-    .Name:   The name of the application
+    .Name:   The *name* of the application
   `
 }
 
@@ -81,7 +83,7 @@ func (cmd *AppList) Execute() error {
 
 func (cmd *AppCreate) Execute() error {
 	if cmd.Help {
-		fmt.Printf("CMD: %+v\n", cmd)
+		cmd.Manual.Open()
 	}
 	return nil
 }
