@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -14,10 +15,21 @@ const (
 	ctx_arg
 )
 
-func Main(args []string, environ []string) error {
+func Main(args []string, environ []string) {
+	if args == nil {
+		args = os.Args
+	}
+
+	if environ == nil {
+		environ = os.Environ()
+	}
+
 	env := new_environment(args, environ)
 	exec := executables[typ_Root]
-	return execute(env, exec, reflect.Value{})
+	err := execute(env, exec, reflect.Value{})
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+	}
 }
 
 func execute(env *environment_t, exec *executable_t, parent reflect.Value) error {
