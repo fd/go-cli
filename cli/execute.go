@@ -105,6 +105,11 @@ func execute_command(env *environment_t, exec *executable_t, pv reflect.Value) e
 		return fmt.Errorf("unexpected arguments: %s", strings.Join(env.args, " "))
 	}
 
+	if hv := v.FieldByName("Help"); hv.Bool() {
+		exec.Manual().Open()
+		return nil
+	}
+
 	return pv.Interface().(Command).Main()
 }
 
@@ -115,6 +120,10 @@ func execute_group(env *environment_t, exec *executable_t, pv reflect.Value) err
 	)
 
 	if len(env.args) == 0 {
+		if hv := v.FieldByName("Help"); hv.Bool() {
+			exec.Manual().Open()
+			return nil
+		}
 		return fmt.Errorf("expected a command")
 	}
 	arg = env.args[0]

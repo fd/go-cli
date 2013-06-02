@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -55,6 +56,7 @@ func (m *Manual) format_man(w io.Writer) {
 	m.flags(buf)
 	m.args(buf)
 	m.vars(buf)
+	m.commands(buf)
 
 	for _, s := range m.sections {
 		s.Man(buf)
@@ -79,11 +81,10 @@ func (m *Manual) synopsis(w *bufio.Writer) {
 
 func (m *Manual) flags(w *bufio.Writer) {
 	var (
-		buf  bytes.Buffer
-		exec = m.exec
+		buf   bytes.Buffer
+		parts []string
+		exec  = m.exec
 	)
-
-	fmt.Fprintf(w, ".SH OPTIONS\n")
 
 	mmf := markdown.ToGroffMM(&buf)
 
@@ -99,46 +100,68 @@ func (m *Manual) flags(w *bufio.Writer) {
 			body := buf.String()
 			body = strings.TrimPrefix(body, ".P\n")
 
-			fmt.Fprintf(w, ".TP\n\\fB%s\\fP\n%s", f.Tag.Get("flag"), body)
+			part := fmt.Sprintf(".TP\n\\fB%s\\fP\n%s", f.Tag.Get("flag"), body)
+			parts = append(parts, part)
 		}
 		exec = exec.ParentExec
+	}
+
+	if len(parts) > 0 {
+		fmt.Fprintf(w, ".SH OPTIONS\n")
+		sort.Strings(parts)
+		for _, part := range parts {
+			fmt.Fprint(w, part)
+		}
+		fmt.Fprintf(w, ".P\n")
 	}
 }
 
 func (m *Manual) vars(w *bufio.Writer) {
 	var (
-		buf bytes.Buffer
+		buf   bytes.Buffer
+		parts []string
+		exec  = m.exec
 	)
-
-	fmt.Fprintf(w, ".SH \"ENVIRONMENT VARIABLES\"\n")
 
 	mmf := markdown.ToGroffMM(&buf)
 
-	for _, f := range m.exec.Variables {
-		s, p := m.options[f.Name]
-		if !p {
-			continue
+	for exec != nil {
+		for _, f := range exec.Variables {
+			s, p := m.options[f.Name]
+			if !p {
+				continue
+			}
+
+			if flag := f.Tag.Get("flag"); flag != "" {
+				s.Body = fmt.Sprintf("See %s", flag)
+			}
+
+			buf.Reset()
+			mmparser.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
+			body := buf.String()
+			body = strings.TrimPrefix(body, ".P\n")
+
+			part := fmt.Sprintf(".TP\n\\fB%s\\fP\n%s", f.Tag.Get("env"), body)
+			parts = append(parts, part)
 		}
+		exec = exec.ParentExec
+	}
 
-		if flag := f.Tag.Get("flag"); flag != "" {
-			s.Body = fmt.Sprintf("See %s", flag)
+	if len(parts) > 0 {
+		fmt.Fprintf(w, ".SH \"ENVIRONMENT VARIABLES\"\n")
+		sort.Strings(parts)
+		for _, part := range parts {
+			fmt.Fprint(w, part)
 		}
-
-		buf.Reset()
-		mmparser.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
-		body := buf.String()
-		body = strings.TrimPrefix(body, ".P\n")
-
-		fmt.Fprintf(w, ".TP\n\\fB%s\\fP\n%s", f.Tag.Get("env"), body)
+		fmt.Fprintf(w, ".P\n")
 	}
 }
 
 func (m *Manual) args(w *bufio.Writer) {
 	var (
-		buf bytes.Buffer
+		buf   bytes.Buffer
+		parts []string
 	)
-
-	fmt.Fprintf(w, ".SH ARGUMENTS\n")
 
 	mmf := markdown.ToGroffMM(&buf)
 
@@ -153,7 +176,50 @@ func (m *Manual) args(w *bufio.Writer) {
 		body := buf.String()
 		body = strings.TrimPrefix(body, ".P\n")
 
-		fmt.Fprintf(w, ".TP\n\\fB%s\\fP\n%s", f.Name, body)
+		part := fmt.Sprintf(".TP\n\\fB%s\\fP\n%s", f.Name, body)
+		parts = append(parts, part)
+	}
+
+	if len(parts) > 0 {
+		fmt.Fprintf(w, ".SH ARGUMENTS\n")
+		sort.Strings(parts)
+		for _, part := range parts {
+			fmt.Fprint(w, part)
+		}
+		fmt.Fprintf(w, ".P\n")
+	}
+}
+
+func (m *Manual) commands(w *bufio.Writer) {
+	var (
+		buf   bytes.Buffer
+		parts []string
+	)
+
+	mmf := markdown.ToGroffMM(&buf)
+
+	for _, subcmd := range m.exec.SubCommands {
+		subm := subcmd.Manual()
+		if subm == nil || subm.summary == "" {
+			continue
+		}
+
+		buf.Reset()
+		mmparser.Markdown(bytes.NewReader([]byte(subm.summary)), mmf)
+		body := buf.String()
+		body = strings.TrimPrefix(body, ".P\n")
+
+		part := fmt.Sprintf(".TP\n\\fB%s\\fP\n%s", strings.Join(subcmd.Names, ", "), body)
+		parts = append(parts, part)
+	}
+
+	if len(parts) > 0 {
+		fmt.Fprintf(w, ".SH COMMANDS\n")
+		sort.Strings(parts)
+		for _, part := range parts {
+			fmt.Fprint(w, part)
+		}
+		fmt.Fprintf(w, ".P\n")
 	}
 }
 
@@ -162,4 +228,5 @@ func (s *section_t) Man(w *bufio.Writer) {
 
 	f := markdown.ToGroffMM(w)
 	mmparser.Markdown(bytes.NewReader([]byte(s.Body)), f)
+	fmt.Fprintf(w, ".P\n")
 }
