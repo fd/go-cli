@@ -12,6 +12,10 @@ import (
 	"strings"
 )
 
+var (
+	mmparser = markdown.NewParser(nil)
+)
+
 func (m *Manual) Open() {
 	r, w, err := os.Pipe()
 	if err != nil {
@@ -75,26 +79,29 @@ func (m *Manual) synopsis(w *bufio.Writer) {
 
 func (m *Manual) flags(w *bufio.Writer) {
 	var (
-		buf bytes.Buffer
+		buf  bytes.Buffer
+		exec = m.exec
 	)
 
 	fmt.Fprintf(w, ".SH OPTIONS\n")
 
-	mmp := markdown.NewParser(nil)
 	mmf := markdown.ToGroffMM(&buf)
 
-	for _, f := range m.exec.Flags {
-		s, p := m.options[f.Name]
-		if !p {
-			continue
+	for exec != nil {
+		for _, f := range exec.Flags {
+			s, p := m.options[f.Name]
+			if !p {
+				continue
+			}
+
+			buf.Reset()
+			mmparser.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
+			body := buf.String()
+			body = strings.TrimPrefix(body, ".P\n")
+
+			fmt.Fprintf(w, ".TP\n\\fB%s\\fP\n%s", f.Tag.Get("flag"), body)
 		}
-
-		buf.Reset()
-		mmp.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
-		body := buf.String()
-		body = strings.TrimPrefix(body, ".P\n")
-
-		fmt.Fprintf(w, ".TP\n\\fB%s\\fP\n%s", f.Tag.Get("flag"), body)
+		exec = exec.ParentExec
 	}
 }
 
@@ -105,7 +112,6 @@ func (m *Manual) vars(w *bufio.Writer) {
 
 	fmt.Fprintf(w, ".SH \"ENVIRONMENT VARIABLES\"\n")
 
-	mmp := markdown.NewParser(nil)
 	mmf := markdown.ToGroffMM(&buf)
 
 	for _, f := range m.exec.Variables {
@@ -119,7 +125,7 @@ func (m *Manual) vars(w *bufio.Writer) {
 		}
 
 		buf.Reset()
-		mmp.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
+		mmparser.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
 		body := buf.String()
 		body = strings.TrimPrefix(body, ".P\n")
 
@@ -134,7 +140,6 @@ func (m *Manual) args(w *bufio.Writer) {
 
 	fmt.Fprintf(w, ".SH ARGUMENTS\n")
 
-	mmp := markdown.NewParser(nil)
 	mmf := markdown.ToGroffMM(&buf)
 
 	for _, f := range m.exec.Args {
@@ -144,7 +149,7 @@ func (m *Manual) args(w *bufio.Writer) {
 		}
 
 		buf.Reset()
-		mmp.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
+		mmparser.Markdown(bytes.NewReader([]byte(s.Body)), mmf)
 		body := buf.String()
 		body = strings.TrimPrefix(body, ".P\n")
 
@@ -155,7 +160,6 @@ func (m *Manual) args(w *bufio.Writer) {
 func (s *section_t) Man(w *bufio.Writer) {
 	fmt.Fprintf(w, ".SH %s\n", strconv.Quote(s.Header))
 
-	p := markdown.NewParser(nil)
 	f := markdown.ToGroffMM(w)
-	p.Markdown(bytes.NewReader([]byte(s.Body)), f)
+	mmparser.Markdown(bytes.NewReader([]byte(s.Body)), f)
 }

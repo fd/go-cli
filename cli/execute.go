@@ -71,11 +71,10 @@ func execute(env *environment_t, exec *executable_t, parent reflect.Value) error
 		}
 	}
 
-	if f := exec.Manual; f.Type != nil {
-		m := Manual{}
-		m.parse(exec)
+	if m := exec.Manual(); m != nil {
+		f := exec.manual
 		fv = v.Field(f.Index[0])
-		fv.Set(reflect.ValueOf(m))
+		fv.Set(reflect.ValueOf(*m))
 	}
 
 	if exec.IsGroup {

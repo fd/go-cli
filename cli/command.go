@@ -24,6 +24,14 @@ type Command interface {
 type Arg0 string
 
 type Root struct {
+	Help bool `flag:"-h,--help"`
+
+	Manual `
+
+    .Help:
+      Show the help message for the current command.
+
+  `
 }
 
 type Manual struct {

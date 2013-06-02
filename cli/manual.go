@@ -6,15 +6,39 @@ import (
 	"unicode"
 )
 
+func (exec *executable_t) Manual() *Manual {
+	if exec.manual.Type == nil {
+		return nil
+	}
+
+	if exec.parsed_manual != nil {
+		return exec.parsed_manual
+	}
+
+	m := &Manual{}
+	m.parse(exec)
+	exec.parsed_manual = m
+
+	return m
+}
+
 func (m *Manual) parse(exec *executable_t) {
 	var (
-		source = string(exec.Manual.Tag)
+		source = string(exec.manual.Tag)
 		indent = determine_indent(source)
 		lines  = strings.Split(source, "\n")
 	)
 
 	m.exec = exec
 	m.options = make(map[string]section_t, 20)
+
+	if p := exec.ParentExec; p != nil {
+		if pm := p.Manual(); pm != nil {
+			for k, o := range pm.options {
+				m.options[k] = o
+			}
+		}
+	}
 
 	remove_indent(lines, indent)
 	m.parse_sections(lines)

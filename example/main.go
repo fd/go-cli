@@ -18,13 +18,15 @@ type Root struct {
 	cli.Root
 	cli.Arg0
 
-	Help    bool `flag:"-h,--help"`
 	Verbose bool `flag:"-v,--verbose" env:"VERBOSE"`
 	Debug   bool `flag:"--debug" env:"DEBUG"`
 
 	cli.Manual `
     Usage:   example CMD ...ARGS
     Summary: Example cli tool.
+
+    .Verbose:
+      Show more details output.
   `
 }
 
@@ -93,8 +95,5 @@ func (cmd *AppDestroy) Main() error {
 }
 
 func main() {
-	err := cli.Main(os.Args, os.Environ())
-	if err != nil {
-		fmt.Printf("error: %s\n", err)
-	}
+	cli.Main(os.Args, os.Environ())
 }

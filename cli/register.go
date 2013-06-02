@@ -6,24 +6,25 @@ import (
 	"strings"
 )
 
-var executables = map[reflect.Type]*executable_t{
-	typ_Root: {
-		Type:    typ_Root,
-		IsGroup: true,
-	},
+var executables = map[reflect.Type]*executable_t{}
+
+func init() {
+	Register(Root{})
 }
 
 type executable_t struct {
-	Type        reflect.Type
-	IsGroup     bool
-	Names       []string
-	Parent      reflect.StructField
-	Arg0        reflect.StructField
-	Manual      reflect.StructField
-	Variables   []reflect.StructField
-	Flags       []reflect.StructField
-	Args        []reflect.StructField
-	SubCommands []*executable_t
+	Type          reflect.Type
+	IsGroup       bool
+	Names         []string
+	ParentExec    *executable_t
+	Parent        reflect.StructField
+	Arg0          reflect.StructField
+	manual        reflect.StructField
+	parsed_manual *Manual
+	Variables     []reflect.StructField
+	Flags         []reflect.StructField
+	Args          []reflect.StructField
+	SubCommands   []*executable_t
 }
 
 func Register(v interface{}) {
@@ -55,7 +56,7 @@ func RegisterType(t reflect.Type) {
 		f.Index = []int{i}
 
 		// first public field
-		if c == 0 {
+		if c == 0 && t != typ_Root {
 			exec.Parent = f
 			continue
 		}
@@ -69,7 +70,7 @@ func RegisterType(t reflect.Type) {
 		}
 
 		if f.Type == typ_Manual {
-			exec.Manual = f
+			exec.manual = f
 			continue
 		}
 
@@ -96,6 +97,7 @@ func RegisterType(t reflect.Type) {
 		if !parent_exec.IsGroup {
 			panic("the parent command must be a group")
 		}
+		exec.ParentExec = parent_exec
 		parent_exec.SubCommands = append(parent_exec.SubCommands, exec)
 	}
 }
